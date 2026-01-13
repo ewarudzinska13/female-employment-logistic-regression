@@ -1,0 +1,190 @@
+Aneks 
+#zwykly logit 
+logit=glm(formula=inlf~+educ+exper+age+kidslt6+kidsge6+faminc+city,data=mrozdane, 
+family=binomial(link="logit")) 
+summary(logit) 
+ 
+#linktest - czy model dobrze wyspecyfikowany 
+source("linktest.R") 
+linktest(logit) 
+ 
+# the Hosmer-Lemeshow test - czy model dobrze dopasowany w podgrupach 
+library("generalhoslem") 
+logitgof(mrozdane$inlf, fitted(logit), g = 10) 
+ 
+#Osius-Rojek test - czy model dobrze dopasowany 
+source("AllGOFTests.R") 
+o.r.test(logit) 
+ 
+#Stukel Test - czy model dobrze dopasowany 
+stukel.test(logit) 
+ 
+#czy zmienne są łącznie istotne 
+#model tylko ze stałą (h0 - łączna nieistotność zmiennych) 
+stala=glm(inlf~1, data=mrozdane, family=binomial(link="logit")) 
+library(lmtest) 
+lrtest(stala, logit) 
+#odrzucam h0 - model nie redukuje sie do tego z sama stałą - zmienne są łacznie istotne 
+ 
+ 
+# logit przy użyciu MM 
+Y=mrozdane$inlf 
+uklad.rownan <- function(b) { 
+  b0 <- b[1]   
+  b1 <- b[2]   
+  b2 <- b[3]   
+  b3 <- b[4]   
+  b4 <- b[5]   
+  b5 <- b[6]   
+  b6 <- b[7]   
+  b7 <- b[8]  
+   
+  model=b0+b1*mrozdane$educ+b2*mrozdane$exper+b3*mrozdane$age+b4*mrozdane$kidslt6+ 
+    b5*mrozdane$kidsge6+b6*mrozdane$faminc+b7*mrozdane$city 
+ 
+  p_hat <- plogis(model) 
+ 
+  r1 <- sum(Y - p_hat) 
+  r2 <- sum((Y - p_hat) * mrozdane$educ)   
+  r3 <- sum((Y - p_hat) * mrozdane$exper)   
+  r4 <- sum((Y - p_hat) * mrozdane$age)   
+  r5 <- sum((Y - p_hat) * mrozdane$kidslt6)   
+  r6 <- sum((Y - p_hat) * mrozdane$kidsge6)   
+  r7 <- sum((Y - p_hat) * mrozdane$faminc)   
+  r8 <- sum((Y - p_hat) * mrozdane$city) 
+   
+ 
+
+  return(c(r1, r2, r3, r4, r5, r6, r7, r8)) 
+} 
+ 
+library(rootSolve) 
+wynik_logit <- multiroot(f = uklad.rownan, start = rep(0,8)) 
+wynik_logit$root 
+ 
+# Przygotowanie danych 
+X <- as.matrix(mrozdane[, c("educ", "exper", "age", "kidslt6", "kidsge6", "faminc", "city")]) 
+Y <- mrozdane$inlf 
+N <- nrow(X) 
+p <- ncol(X) 
+ 
+beta_est <- wynik_logit$root 
+ 
+# Wartości estymatorów 
+b0.hat <- beta_est[1] 
+b1.hat <- beta_est[2] 
+b2.hat <- beta_est[3] 
+b3.hat <- beta_est[4] 
+b4.hat <- beta_est[5] 
+b5.hat <- beta_est[6] 
+b6.hat <- beta_est[7] 
+b7.hat <- beta_est[8] 
+ 
+b.hats <- beta_est[-1] 
+b0.hat<-wynik_logit$root[1] 
+# Estymowane prawdopodobieństwa 
+p_hat <- plogis(b0.hat + X %*% b.hats) 
+ 
+m <- rbind( 
+  as.vector((Y - p_hat) / N), 
+  as.vector((X[, 1] * (Y - p_hat)) / N), 
+  as.vector((X[, 2] * (Y - p_hat)) / N), 
+  as.vector((X[, 3] * (Y - p_hat)) / N), 
+  as.vector((X[, 4] * (Y - p_hat)) / N), 
+  as.vector((X[, 5] * (Y - p_hat)) / N), 
+  as.vector((X[, 6] * (Y - p_hat)) / N), 
+  as.vector((X[, 7] * (Y - p_hat)) / N) 
+) 
+ 
+# Macierz informacji Fishera (D) 
+D <- matrix(c( 
+  1, mean(X[, 1]), mean(X[, 2]), mean(X[, 3]), mean(X[, 4]), mean(X[, 5]), mean(X[, 6]), mean(X[, 7]), 
+  mean(X[, 1]), sum(X[, 1]^2 * p_hat * (1 - p_hat)) / N, sum(X[, 1] * X[, 2] * p_hat * (1 - p_hat)) / N, 
+  sum(X[, 1] * X[, 3] * p_hat * (1 - p_hat)) / N, sum(X[, 1] * X[, 4] * p_hat * (1 - p_hat)) / N, 
+  sum(X[, 1] * X[, 5] * p_hat * (1 - p_hat)) / N, sum(X[, 1] * X[, 6] * p_hat * (1 - p_hat)) / N, 
+  sum(X[, 1] * X[, 7] * p_hat * (1 - p_hat)) / N, 
+  mean(X[, 2]), sum(X[, 1] * X[, 2] * p_hat * (1 - p_hat)) / N, sum(X[, 2]^2 * p_hat * (1 - p_hat)) / N, 
+  sum(X[, 2] * X[, 3] * p_hat * (1 - p_hat)) / N, sum(X[, 2] * X[, 4] * p_hat * (1 - p_hat)) / N, 
+  sum(X[, 2] * X[, 5] * p_hat * (1 - p_hat)) / N, sum(X[, 2] * X[, 6] * p_hat * (1 - p_hat)) / N, 
+  sum(X[, 2] * X[, 7] * p_hat * (1 - p_hat)) / N, 
+  mean(X[, 3]), sum(X[, 1] * X[, 3] * p_hat * (1 - p_hat)) / N, sum(X[, 2] * X[, 3] * p_hat * (1 - p_hat)) / 
+N, 
+  sum(X[, 3]^2 * p_hat * (1 - p_hat)) / N, sum(X[, 3] * X[, 4] * p_hat * (1 - p_hat)) / N, 
+ 
+
+sum(X[, 3] * X[, 5] * p_hat * (1 - p_hat)) / N, sum(X[, 3] * X[, 6] * p_hat * (1 - p_hat)) / N, 
+sum(X[, 3] * X[, 7] * p_hat * (1 - p_hat)) / N, 
+mean(X[, 4]), sum(X[, 1] * X[, 4] * p_hat * (1 - p_hat)) / N, sum(X[, 2] * X[, 4] * p_hat * (1 - p_hat)) / 
+N, 
+sum(X[, 3] * X[, 4] * p_hat * (1 - p_hat)) / N, sum(X[, 4]^2 * p_hat * (1 - p_hat)) / N, 
+sum(X[, 4] * X[, 5] * p_hat * (1 - p_hat)) / N, sum(X[, 4] * X[, 6] * p_hat * (1 - p_hat)) / N, 
+sum(X[, 4] * X[, 7] * p_hat * (1 - p_hat)) / N, 
+mean(X[, 5]), sum(X[, 1] * X[, 5] * p_hat * (1 - p_hat)) / N, sum(X[, 2] * X[, 5] * p_hat * (1 - p_hat)) / 
+N, 
+sum(X[, 3] * X[, 5] * p_hat * (1 - p_hat)) / N, sum(X[, 4] * X[, 5] * p_hat * (1 - p_hat)) / N, 
+sum(X[, 5]^2 * p_hat * (1 - p_hat)) / N, sum(X[, 5] * X[, 6] * p_hat * (1 - p_hat)) / N, 
+sum(X[, 5] * X[, 7] * p_hat * (1 - p_hat)) / N, 
+mean(X[, 6]), sum(X[, 1] * X[, 6] * p_hat * (1 - p_hat)) / N, sum(X[, 2] * X[, 6] * p_hat * (1 - p_hat)) / 
+N, 
+sum(X[, 3] * X[, 6] * p_hat * (1 - p_hat)) / N, sum(X[, 4] * X[, 6] * p_hat * (1 - p_hat)) / N, 
+sum(X[, 5] * X[, 6] * p_hat * (1 - p_hat)) / N, sum(X[, 6]^2 * p_hat * (1 - p_hat)) / N, 
+sum(X[, 6] * X[, 7] * p_hat * (1 - p_hat)) / N, 
+mean(X[, 7]), sum(X[, 1] * X[, 7] * p_hat * (1 - p_hat)) / N, sum(X[, 2] * X[, 7] * p_hat * (1 - p_hat)) / 
+N, 
+sum(X[, 3] * X[, 7] * p_hat * (1 - p_hat)) / N, sum(X[, 4] * X[, 7] * p_hat * (1 - p_hat)) / N, 
+sum(X[, 5] * X[, 7] * p_hat * (1 - p_hat)) / N, sum(X[, 6] * X[, 7] * p_hat * (1 - p_hat)) / N, 
+sum(X[, 7]^2 * p_hat * (1 - p_hat)) / N 
+), nrow = p + 1, ncol = p + 1) 
+dim(D)  # Powinno być (p+1, p+1) 
+dim(m)  # Powinno być (p+1, N) 
+# Macierz wariancji-kowariancji 
+vcov <- solve(D) %*% m %*% t(m) %*% t(solve(D)) 
+# Odchylenia standardowe estymatorów 
+std_errors <- sqrt(diag(vcov)) 
+# Wyniki 
+print(vcov) 
+print(std_errors) 
+#porównanie z logitem zwykłym 
+(sum.mod=summary(logit)$coefficients) 
+#porównanie w jednej tablicy 
+porownanie=data.frame(wynik_logit$root, std_errors, sum.mod[,1], sum.mod[,2])  
+colnames(porownanie)=c("MM.b", "MM.str.err", "logit.b", "logit.std.err")  
+print(porownanie) 
+#wyliczenie z i Pr(>|z|) dla oszacowań MM 
+#b0 
+(z=wynik_logit$root[1]/std_errors[1]) 
+sprintf("%.100f",(2*(1-pnorm(abs(z))))) 
+(2*(1-pnorm(abs(z)))) 
+#b1 
+(z=wynik_logit$root[2]/std_errors[2]) 
+sprintf("%.100f",(2*(1-pnorm(abs(z))))) 
+(2*(1-pnorm(abs(z)))) 
+#b2 
+(z=wynik_logit$root[3]/std_errors[3]) 
+
+sprintf("%.100f",(2*(1-pnorm(abs(z))))) 
+(2*(1-pnorm(abs(z)))) 
+#b3 
+(z=wynik_logit$root[4]/std_errors[4]) 
+sprintf("%.100f",(2*(1-pnorm(abs(z))))) 
+(2*(1-pnorm(abs(z)))) 
+#b4 
+(z=wynik_logit$root[5]/std_errors[5]) 
+sprintf("%.100f",(2*(1-pnorm(abs(z))))) 
+(2*(1-pnorm(abs(z)))) 
+#b5 
+(z=wynik_logit$root[6]/std_errors[6]) 
+sprintf("%.100f",(2*(1-pnorm(abs(z))))) 
+(2*(1-pnorm(abs(z)))) 
+#b6 
+(z=wynik_logit$root[7]/std_errors[7]) 
+sprintf("%.100f",(2*(1-pnorm(abs(z))))) 
+(2*(1-pnorm(abs(z)))) 
+#b7 
+(z=wynik_logit$root[8]/std_errors[8]) 
+sprintf("%.100f",(2*(1-pnorm(abs(z))))) 
+(2*(1-pnorm(abs(z)))) 
+#testuje hipoteze ze b4 = -1.7 
+z.test=(b4.hat+1.7)/(sqrt(diag(vcov))[5]) 
+z.test 
+#p-value=1.597296 nie ma podstaw do odrzucenia h0 że b2 = -1.7
