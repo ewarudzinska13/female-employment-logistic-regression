@@ -16,21 +16,21 @@ This study analyzes determinants of female labor force participation using logis
 
 Based on Bruce (1978) and Euwals et al. (2011), young children significantly reduce female labor force participation due to childcare responsibilities and costs.
 
-**Result**: ✅ **CONFIRMED** - Strong negative effect (β₄ ≈ -1.40, p < 0.001)
+**Result**: **CONFIRMED** - Strong negative effect (β₄ ≈ -1.40, p < 0.001)
 
 ### Hypothesis 2: Older Children Effect  
 **Having children aged 6-18 negatively impacts employment probability, but less severely than younger children.**
 
 Following Euwals et al. (2011), the negative effect should decrease as children reach school age.
 
-**Result**: ❌ **REJECTED** - Effect statistically insignificant (β₅ ≈ 0.044, p > 0.5)
+**Result**:  **REJECTED** - Effect statistically insignificant (β₅ ≈ 0.044, p > 0.5)
 
 ### Hypothesis 3: Education Effect
 **More years of education increase the probability of female employment.**
 
 Consistent with Euwals et al. (2011) and Osundina (2019), higher education correlates with increased female labor force participation.
 
-**Result**: ✅ **CONFIRMED** - Positive effect (β₁ ≈ 0.162, p < 0.001)
+**Result**:  **CONFIRMED** - Positive effect (β₁ ≈ 0.162, p < 0.001)
 
 ## Data
 
