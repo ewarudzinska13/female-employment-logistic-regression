@@ -158,10 +158,3 @@ The family income variable showed the only meaningful difference: significant at
   - `generalhoslem` - Hosmer-Lemeshow test
 
 
-## Academic Context
-
-- **Course**: Analytical Tools Programming II (Programowanie Narzędzi Analitycznych II)
-- **Instructor**: Dr. Rafał Woźniak, Department of Statistics and Econometrics
-- **Institution**: University of Warsaw, Faculty of Economic Sciences
-- **Completion**: February 2025
-- **Program**: IT & Econometrics / Economics & Informatics
